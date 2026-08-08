@@ -4,6 +4,8 @@ import type { Submission, Comment } from '../supabaseClient';
 import { Search, MessageSquare, Play, Calendar, User, Send, ChevronDown, ChevronUp, Image as ImageIcon, Archive, Lock, Info } from 'lucide-react';
 import { getMonthYearTag, getCurrentMonthYear } from '../utils/dateUtils';
 
+const REQUIRED_FIRM_PASSCODE = 'Potter2026';
+
 interface VirtualBreakroomProps {
   submissions: (Submission & { comments: Comment[] })[];
   onRefresh: () => void;
@@ -52,7 +54,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
   const handleArchiveCurrentMonth = async () => {
     const password = prompt("Enter Admin PIN to archive current month's posts:");
     if (password === null) return;
-    if (password !== 'Potter2026') {
+    if (password !== REQUIRED_FIRM_PASSCODE) {
       alert('Incorrect PIN. Access Denied.');
       return;
     }
