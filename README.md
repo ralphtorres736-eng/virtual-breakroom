@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# The Virtual Breakroom 🥪✨
+> **Internal Culture & Remote Team Hub — The Potter Law Group**
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The Virtual Breakroom is a high-end, executive React web application designed to foster remote team culture for **The Potter Law Group**. Built around the tradition of **Mrs. Potter's Monthly Lunch Thursday**, the app provides a centralized space for staff to review firm-provided meals, share short video previews, engage in collegial breakroom banter, and automatically archive monthly culture moments.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🏛️ Executive Features
 
-## React Compiler
+- **Mrs. Potter's Monthly Countdown:** Dynamic timer automatically calculating the 4th Thursday of each month.
+- **Video Meal Previews:** Short, full-width HTML5 video uploads (30–60s preferred) highlighting team lunches.
+- **Breakroom Banter Threads:** Native inline comment threads on meal cards to promote collegial team interactions.
+- **Protected Monthly Archive Vault:** Automatic month/year tagging (`July 2026`, `August 2026`) with admin archiving protected by PIN authentication (`Potter2026`).
+- **PII & Data Privacy Hardened:** Receipts and financial tracking stripped out; embedded internal confidentiality notices ensuring no client files or privileged data enter the media stream.
+- **Zero-Crash Fallback Mode:** Automatic environment detection that seamlessly transitions between live Supabase cloud storage and local browser storage.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Tech Stack & Architecture
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- **Frontend:** React 18, TypeScript, Vite
+- **Styling:** Tailwind CSS v4 (Custom Slate Blue & Executive Warm Gold palette)
+- **Icons & Typography:** Lucide React, Playfair Display (Serif), Inter (Sans-Serif)
+- **Database & Storage:** Supabase (`@supabase/supabase-js`) with `lunch_submissions` & `lunch_comments` tables + `lunch-proofs` bucket
+- **Deployment:** Vercel (Single Page Application configuration)
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+---
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 🚀 Quick Start (Local Development)
+
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/ralphtorres736-eng/virtual-breakroom.git](https://github.com/ralphtorres736-eng/virtual-breakroom.git)
+cd virtual-breakroom
