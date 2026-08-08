@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-dark: #0f172a;
+  --color-brand-primary: #1e293b;
+  --color-brand-law-navy: #1b2a4a;
+  --color-brand-slate-light: #475569;
+  --color-brand-gold: #c5a059;
+  --color-brand-gold-bright: #e5c382;
+  --color-brand-gold-muted: #e6dfd3;
+  --color-brand-cream: #fcfbf9;
+  --color-brand-card: #ffffff;
+
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-brand-cream);
+    color: var(--color-brand-dark);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+  }
+}
+
+/* Premium scrollbar for the breakroom feed */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(27, 42, 74, 0.03);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-gold);
+  border-radius: 9999px;
+  border: 2px solid var(--color-brand-cream);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-gold-bright);
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(197, 160, 89, 0.15);
+}
+
+/* Law firm badge effect */
+.gold-shadow {
+  box-shadow: 0 4px 20px -2px rgba(197, 160, 89, 0.12);
+}
+.gold-shadow-hover:hover {
+  box-shadow: 0 10px 25px -5px rgba(197, 160, 89, 0.2);
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
