@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from '../supabaseClient';
+import { api, supabase, isSupabaseConfigured } from '../supabaseClient';
 import type { Submission, Comment } from '../supabaseClient';
 import { Search, MessageSquare, Play, Calendar, User, Send, ChevronDown, ChevronUp, Image as ImageIcon, Archive, Lock, Info } from 'lucide-react';
 import { getMonthYearTag, getCurrentMonthYear } from '../utils/dateUtils';
@@ -26,6 +26,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
   const [commentNames, setCommentNames] = useState<Record<string, string>>({});
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
   const [isSubmittingComment, setIsSubmittingComment] = useState<Record<string, boolean>>({});
+  const [localComments, setLocalComments] = useState<Record<string, Comment[]>>({});
 
   // Staff Guide & Etiquette Banner state
   const [showGuide, setShowGuide] = useState<boolean>(() => {
@@ -101,26 +102,77 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
 
   const handleAddComment = async (e: React.FormEvent, submissionId: string) => {
     e.preventDefault();
-    const commenterName = commentNames[submissionId]?.trim();
-    const commentText = commentTexts[submissionId]?.trim();
+    const commentAuthorName = commentNames[submissionId]?.trim();
+    const commentBodyText = commentTexts[submissionId]?.trim();
+    const targetSubmissionId = submissionId;
 
-    if (!commenterName || !commentText) return;
+    if (!commentAuthorName || !commentBodyText) return;
 
-    setIsSubmittingComment((prev) => ({ ...prev, [submissionId]: true }));
-    try {
-      // Save commenter name locally for convenience
-      localStorage.setItem('firm_table_commenter_name', commenterName);
-      
-      await api.addComment(submissionId, commenterName, commentText);
-      
-      // Clear input text
-      setCommentTexts((prev) => ({ ...prev, [submissionId]: '' }));
-      onRefresh();
-    } catch (err) {
-      console.error('Failed to post comment:', err);
-      alert('Could not submit comment. Please try again.');
-    } finally {
-      setIsSubmittingComment((prev) => ({ ...prev, [submissionId]: false }));
+    setIsSubmittingComment((prev) => ({ ...prev, [targetSubmissionId]: true }));
+    
+    // Save commenter name locally for convenience
+    localStorage.setItem('firm_table_commenter_name', commentAuthorName);
+    
+    // Clear the input field immediately upon clicking "Post Banter"
+    setCommentTexts((prev) => ({ ...prev, [targetSubmissionId]: '' }));
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase
+          .from('lunch_comments')
+          .insert([
+            {
+              submission_id: targetSubmissionId,
+              employee_name: commentAuthorName || 'Anonymous Staff',
+              comment_text: commentBodyText,
+              comment: commentBodyText
+            }
+          ]);
+
+        if (error) throw error;
+        
+        onRefresh();
+      } catch (error) {
+        console.error("Supabase Comment Insert Error:", error);
+        
+        // Append the new comment to local component state so the user sees their comment render immediately without blocking the interaction
+        const fallbackComment: Comment = {
+          id: `com-failed-${Date.now()}`,
+          submission_id: targetSubmissionId,
+          employee_name: commentAuthorName || 'Anonymous Staff',
+          comment_text: commentBodyText,
+          created_at: new Date().toISOString(),
+        };
+        
+        setLocalComments((prev) => ({
+          ...prev,
+          [targetSubmissionId]: [...(prev[targetSubmissionId] || []), fallbackComment],
+        }));
+      } finally {
+        setIsSubmittingComment((prev) => ({ ...prev, [targetSubmissionId]: false }));
+      }
+    } else {
+      // Demo / Fallback Mode using api.addComment
+      try {
+        await api.addComment(targetSubmissionId, commentAuthorName, commentBodyText);
+        onRefresh();
+      } catch (err) {
+        console.error('Failed to post comment in local mode:', err);
+        const fallbackComment: Comment = {
+          id: `com-failed-${Date.now()}`,
+          submission_id: targetSubmissionId,
+          employee_name: commentAuthorName || 'Anonymous Staff',
+          comment_text: commentBodyText,
+          created_at: new Date().toISOString(),
+        };
+        
+        setLocalComments((prev) => ({
+          ...prev,
+          [targetSubmissionId]: [...(prev[targetSubmissionId] || []), fallbackComment],
+        }));
+      } finally {
+        setIsSubmittingComment((prev) => ({ ...prev, [targetSubmissionId]: false }));
+      }
     }
   };
 
@@ -332,7 +384,11 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredSubmissions.map((sub) => {
-            const hasComments = sub.comments && sub.comments.length > 0;
+            const combinedComments = [
+              ...(sub.comments || []),
+              ...(localComments[sub.id] || [])
+            ];
+            const hasComments = combinedComments.length > 0;
             const commentsOpen = !!expandedComments[sub.id];
 
             return (
@@ -408,7 +464,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                     <span className="flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-brand-gold" />
                       {hasComments ? (
-                        <span>Banter Threads ({sub.comments.length})</span>
+                        <span>Banter Threads ({combinedComments.length})</span>
                       ) : (
                         <span>Start Team Banter</span>
                       )}
@@ -426,7 +482,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                       {/* Comment list */}
                       {hasComments && (
                         <div className="space-y-3 pt-3 max-h-[200px] overflow-y-auto pr-1">
-                          {sub.comments.map((com) => (
+                          {combinedComments.map((com) => (
                             <div key={com.id} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100 text-xs">
                               <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-brand-law-navy">{com.employee_name}</span>
