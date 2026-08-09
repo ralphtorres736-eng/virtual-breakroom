@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { api, isSupabaseConfigured } from '../supabaseClient';
 import { Upload, X, CheckCircle, AlertCircle, Loader2, FileVideo } from 'lucide-react';
+
+const FIRM_PASSCODE = 'Potter2026';
 
 interface SubmissionFormProps {
   isOpen: boolean;
@@ -26,6 +28,22 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
   
   // Refs
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  const [firmPasscode, setFirmPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem("firm_auth") === "true");
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsAuthenticated(sessionStorage.getItem("firm_auth") === "true");
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setFirmPasscode('');
+    setPasscodeError('');
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -71,6 +89,17 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const isAlreadyAuth = sessionStorage.getItem("firm_auth") === "true";
+    if (!isAlreadyAuth) {
+      if (firmPasscode.trim() !== FIRM_PASSCODE) {
+        setPasscodeError('Invalid Firm Passcode.');
+        return;
+      }
+      sessionStorage.setItem("firm_auth", "true");
+      setIsAuthenticated(true);
+    }
+
     if (!employeeName.trim() || !restaurantName.trim() || !comment.trim()) {
       setErrorMsg('Please complete all standard fields.');
       return;
@@ -106,7 +135,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
       
       setTimeout(() => {
         onSuccess();
-        onClose();
+        handleClose();
         setSuccessMsg('');
       }, 2000);
 
@@ -133,7 +162,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
             <p className="text-xs text-slate-300 mt-0.5">Submit your meal and review for the virtual breakroom</p>
           </div>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -161,6 +190,28 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
           {!isSupabaseConfigured && (
             <div className="bg-amber-50 border border-brand-gold/30 text-amber-800 px-4 py-2 rounded-lg text-xs">
               <strong className="text-amber-900">Demo Mode Active:</strong> Files are loaded locally. Uploaded videos will play in this session, and posts are saved to LocalStorage.
+            </div>
+          )}
+
+          {/* Firm Passcode */}
+          {!isAuthenticated && (
+            <div className="mb-4">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Firm Passcode *
+              </label>
+              <input
+                type="password"
+                placeholder="Enter firm passcode"
+                value={firmPasscode}
+                onChange={(e) => {
+                  setFirmPasscode(e.target.value);
+                  setPasscodeError('');
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-amber-500 text-sm"
+              />
+              {passcodeError && (
+                <p className="text-xs text-red-600 mt-1 font-medium">{passcodeError}</p>
+              )}
             </div>
           )}
 
@@ -266,7 +317,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
             <button
               type="button"
               disabled={isSubmitting}
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
             >
               Cancel

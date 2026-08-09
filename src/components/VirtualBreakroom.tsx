@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api, supabase, isSupabaseConfigured } from '../supabaseClient';
 import type { Submission, Comment } from '../supabaseClient';
 import { Search, MessageSquare, Play, Calendar, User, Send, ChevronDown, ChevronUp, Image as ImageIcon, Archive, Lock, Info } from 'lucide-react';
 import { getMonthYearTag, getCurrentMonthYear } from '../utils/dateUtils';
 
-const REQUIRED_FIRM_PASSCODE = 'Potter2026';
+const FIRM_PASSCODE = 'Potter2026';
 
 interface VirtualBreakroomProps {
   submissions: (Submission & { comments: Comment[] })[];
@@ -30,6 +30,15 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
   const [isSubmittingComment, setIsSubmittingComment] = useState<Record<string, boolean>>({});
   const [localComments, setLocalComments] = useState<Record<string, Comment[]>>({});
 
+  // Auth state for session persistence
+  const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem("firm_auth") === "true");
+  const [commentPasscodes, setCommentPasscodes] = useState<Record<string, string>>({});
+  const [commentErrors, setCommentErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setIsAuthenticated(sessionStorage.getItem("firm_auth") === "true");
+  }, [submissions, isLoading]);
+
   // Staff Guide & Etiquette Banner state
   const [showGuide, setShowGuide] = useState<boolean>(() => {
     const saved = localStorage.getItem('hide_staff_etiquette');
@@ -54,7 +63,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
   const handleArchiveCurrentMonth = async () => {
     const password = prompt("Enter Admin PIN to archive current month's posts:");
     if (password === null) return;
-    if (password !== REQUIRED_FIRM_PASSCODE) {
+    if (password !== FIRM_PASSCODE) {
       alert('Incorrect PIN. Access Denied.');
       return;
     }
@@ -110,6 +119,25 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
 
     if (!commentAuthorName || !commentBodyText) return;
 
+    // Hardening passcode check
+    const isAlreadyAuth = sessionStorage.getItem("firm_auth") === "true";
+    if (!isAlreadyAuth) {
+      const passcode = commentPasscodes[targetSubmissionId]?.trim();
+      if (passcode !== FIRM_PASSCODE) {
+        setCommentErrors((prev) => ({
+          ...prev,
+          [targetSubmissionId]: "Invalid Firm Passcode."
+        }));
+        return;
+      }
+      sessionStorage.setItem("firm_auth", "true");
+      setIsAuthenticated(true);
+      setCommentErrors((prev) => ({
+        ...prev,
+        [targetSubmissionId]: ""
+      }));
+    }
+
     setIsSubmittingComment((prev) => ({ ...prev, [targetSubmissionId]: true }));
     
     // Save commenter name locally for convenience
@@ -117,6 +145,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
     
     // Clear the input field immediately upon clicking "Post Banter"
     setCommentTexts((prev) => ({ ...prev, [targetSubmissionId]: '' }));
+    setCommentPasscodes((prev) => ({ ...prev, [targetSubmissionId]: '' }));
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -520,7 +549,27 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                             className="px-2.5 py-1.5 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-gold/50 sm:col-span-2"
                           />
                         </div>
-                        <div className="flex justify-end">
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <div className="flex-1">
+                            {!isAuthenticated && (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="password"
+                                  required
+                                  placeholder="Firm Passcode"
+                                  value={commentPasscodes[sub.id] || ''}
+                                  onChange={(e) => {
+                                    setCommentPasscodes((prev) => ({ ...prev, [sub.id]: e.target.value }));
+                                    setCommentErrors((prev) => ({ ...prev, [sub.id]: '' }));
+                                  }}
+                                  className="px-2.5 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-gold/50 w-36"
+                                />
+                                {commentErrors[sub.id] && (
+                                  <span className="text-red-500 text-[10px] font-medium">{commentErrors[sub.id]}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                           <button
                             type="submit"
                             disabled={isSubmittingComment[sub.id]}
