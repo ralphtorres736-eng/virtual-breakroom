@@ -35,7 +35,55 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
   const [commentPasscodes, setCommentPasscodes] = useState<Record<string, string>>({});
   const [commentErrors, setCommentErrors] = useState<Record<string, string>>({});
 
+  // Local state for fetched submissions and comments
+  const [activeSubmissions, setActiveSubmissions] = useState<(Submission & { comments: Comment[] })[]>([]);
+  const [isLocalLoading, setIsLocalLoading] = useState(true);
+
+  const fetchBreakroomData = async () => {
+    setIsLocalLoading(true);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: subs, error: subsErr } = await supabase
+          .from('lunch_submissions')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (subsErr) throw subsErr;
+
+        const { data: comms, error: commsErr } = await supabase
+          .from('lunch_comments')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (commsErr) throw commsErr;
+
+        // Map and normalize comments to handle different column naming variants
+        const normalizedComments: Comment[] = (comms || []).map((c: any) => ({
+          id: c.id,
+          submission_id: c.submission_id,
+          employee_name: c.employee_name || c.author_name || 'Anonymous Staff',
+          comment_text: c.comment_text || c.comment || '',
+          created_at: c.created_at,
+        }));
+
+        const mappedSubmissions = (subs || []).map((sub: any) => ({
+          ...sub,
+          comments: normalizedComments.filter((com) => com.submission_id === sub.id),
+        }));
+
+        setActiveSubmissions(mappedSubmissions);
+      } catch (error) {
+        console.error("Error fetching breakroom data from Supabase:", error);
+      } finally {
+        setIsLocalLoading(false);
+      }
+    } else {
+      // If Supabase is not configured, fall back to the submissions prop
+      setActiveSubmissions(submissions);
+      setIsLocalLoading(false);
+    }
+  };
+
   useEffect(() => {
+    fetchBreakroomData();
     setIsAuthenticated(sessionStorage.getItem("firm_auth") === "true");
   }, [submissions, isLoading]);
 
@@ -55,7 +103,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
 
   // Calculate unique months dynamically from submissions
   const availableMonths = Array.from(
-    new Set(submissions.map((sub) => getMonthYearTag(sub.created_at)))
+    new Set(activeSubmissions.map((sub) => getMonthYearTag(sub.created_at)))
   ).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
   const activeVaultMonth = selectedVaultMonth || (availableMonths[0] || getCurrentMonthYear());
@@ -71,7 +119,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
     setIsAdminArchiving(true);
     try {
       const currentMonth = getCurrentMonthYear();
-      const toArchive = submissions.filter(
+      const toArchive = activeSubmissions.filter(
         (sub) => getMonthYearTag(sub.created_at) === currentMonth && sub.receipt_url !== 'archived'
       );
       
@@ -147,21 +195,24 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
     setCommentTexts((prev) => ({ ...prev, [targetSubmissionId]: '' }));
     setCommentPasscodes((prev) => ({ ...prev, [targetSubmissionId]: '' }));
 
+    const authorName = commentAuthorName;
+    const commentText = commentBodyText;
+
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase
-          .from('lunch_comments')
-          .insert([
-            {
-              submission_id: targetSubmissionId,
-              employee_name: commentAuthorName || 'Anonymous Staff',
-              comment_text: commentBodyText,
-              comment: commentBodyText
-            }
-          ]);
+        const { error } = await supabase.from('lunch_comments').insert([
+          {
+            submission_id: submissionId,
+            author_name: authorName || "Anonymous Staff",
+            comment_text: commentText.trim(),
+            employee_name: authorName || "Anonymous Staff",
+            comment: commentText.trim(),
+          }
+        ]);
 
         if (error) throw error;
         
+        await fetchBreakroomData();
         onRefresh();
       } catch (error) {
         console.error("Supabase Comment Insert Error:", error);
@@ -169,46 +220,47 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
         // Append the new comment to local component state so the user sees their comment render immediately without blocking the interaction
         const fallbackComment: Comment = {
           id: `com-failed-${Date.now()}`,
-          submission_id: targetSubmissionId,
-          employee_name: commentAuthorName || 'Anonymous Staff',
-          comment_text: commentBodyText,
+          submission_id: submissionId,
+          employee_name: authorName || 'Anonymous Staff',
+          comment_text: commentText,
           created_at: new Date().toISOString(),
         };
         
         setLocalComments((prev) => ({
           ...prev,
-          [targetSubmissionId]: [...(prev[targetSubmissionId] || []), fallbackComment],
+          [submissionId]: [...(prev[submissionId] || []), fallbackComment],
         }));
       } finally {
-        setIsSubmittingComment((prev) => ({ ...prev, [targetSubmissionId]: false }));
+        setIsSubmittingComment((prev) => ({ ...prev, [submissionId]: false }));
       }
     } else {
       // Demo / Fallback Mode using api.addComment
       try {
-        await api.addComment(targetSubmissionId, commentAuthorName, commentBodyText);
+        await api.addComment(submissionId, authorName, commentText);
+        await fetchBreakroomData();
         onRefresh();
       } catch (err) {
         console.error('Failed to post comment in local mode:', err);
         const fallbackComment: Comment = {
           id: `com-failed-${Date.now()}`,
-          submission_id: targetSubmissionId,
-          employee_name: commentAuthorName || 'Anonymous Staff',
-          comment_text: commentBodyText,
+          submission_id: submissionId,
+          employee_name: authorName || 'Anonymous Staff',
+          comment_text: commentText,
           created_at: new Date().toISOString(),
         };
         
         setLocalComments((prev) => ({
           ...prev,
-          [targetSubmissionId]: [...(prev[targetSubmissionId] || []), fallbackComment],
+          [submissionId]: [...(prev[submissionId] || []), fallbackComment],
         }));
       } finally {
-        setIsSubmittingComment((prev) => ({ ...prev, [targetSubmissionId]: false }));
+        setIsSubmittingComment((prev) => ({ ...prev, [submissionId]: false }));
       }
     }
   };
 
   // Filter and search logic
-  const filteredSubmissions = submissions.filter((sub) => {
+  const filteredSubmissions = activeSubmissions.filter((sub) => {
     const currentMonth = getCurrentMonthYear();
     const isPostArchived = sub.receipt_url === 'archived' || getMonthYearTag(sub.created_at) !== currentMonth;
 
@@ -399,7 +451,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
       )}
 
       {/* Grid Container */}
-      {isLoading ? (
+      {isLoading || isLocalLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <div className="w-10 h-10 border-4 border-brand-gold/25 border-t-brand-gold rounded-full animate-spin mb-4"></div>
           <p className="text-sm">Fetching breakroom feed...</p>
@@ -457,11 +509,10 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                   {sub.video_url ? (
                     <div className="relative group rounded-lg overflow-hidden border border-slate-200 bg-slate-950 aspect-video flex items-center justify-center">
                       <video
-                        src={sub.video_url || undefined}
+                        src={sub.video_url ? `${sub.video_url}#t=0.1` : undefined}
                         controls
-                        preload="none"
+                        preload="metadata"
                         className="w-full h-full object-cover max-h-[220px]"
-                        poster="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=400"
                       >
                         Your browser does not support native video playback.
                       </video>
