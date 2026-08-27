@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { api, isSupabaseConfigured } from '../supabaseClient';
-import { Upload, X, CheckCircle, AlertCircle, Loader2, FileVideo } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle, Loader2, FileVideo, Receipt } from 'lucide-react';
 
 const FIRM_PASSCODE = 'Potter2026';
 
@@ -17,6 +17,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
   
   // File states
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   
   // Upload & UI states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,9 +26,11 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
   
   // Validation messages
   const [videoError, setVideoError] = useState('');
+  const [receiptError, setReceiptError] = useState('');
   
   // Refs
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
 
   const [firmPasscode, setFirmPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
@@ -42,6 +45,8 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
   const handleClose = () => {
     setFirmPasscode('');
     setPasscodeError('');
+    setReceiptFile(null);
+    setReceiptError('');
     onClose();
   };
 
@@ -85,6 +90,33 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
     video.src = URL.createObjectURL(file);
   };
 
+  const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'pdf'];
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    
+    const isValidType = file.type === 'application/pdf' || 
+                        file.type.startsWith('image/') || 
+                        (fileExt && allowedExtensions.includes(fileExt));
+                        
+    if (!isValidType) {
+      setReceiptError('Please upload a valid receipt file (.png, .jpg, .jpeg, .pdf).');
+      setReceiptFile(null);
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setReceiptError('Receipt file is too large (max 10MB).');
+      setReceiptFile(null);
+      return;
+    }
+
+    setReceiptError('');
+    setReceiptFile(file);
+  };
+
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,19 +144,39 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
     try {
       const tempId = `temp_${Date.now()}`;
       let videoUrl: string | null = null;
+      let receiptUrl: string | null = null;
+
+      const uploadPromises: Promise<any>[] = [];
 
       // 1. Upload Video if present
       if (videoFile) {
-        videoUrl = await api.uploadFile(videoFile, 'videos', tempId);
+        uploadPromises.push(
+          api.uploadFile(videoFile, 'videos', tempId).then((url) => {
+            videoUrl = url;
+          })
+        );
       }
 
-      // 2. Create Submission in DB
+      // 2. Upload Receipt if present
+      if (receiptFile) {
+        uploadPromises.push(
+          api.uploadFile(receiptFile, 'receipts', tempId).then((url) => {
+            receiptUrl = url;
+          })
+        );
+      }
+
+      if (uploadPromises.length > 0) {
+        await Promise.all(uploadPromises);
+      }
+
+      // 3. Create Submission in DB
       await api.createSubmission({
         employee_name: employeeName.trim(),
         restaurant_name: restaurantName.trim(),
         comment: comment.trim(),
         video_url: videoUrl,
-        receipt_url: null,
+        receipt_url: receiptUrl,
       }, tempId);
 
       setSuccessMsg('Meal submission registered successfully! Mrs. Potter has been notified.');
@@ -132,6 +184,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
       setRestaurantName('');
       setComment('');
       setVideoFile(null);
+      setReceiptFile(null);
       
       setTimeout(() => {
         onSuccess();
@@ -200,8 +253,8 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
                 Firm Passcode *
               </label>
               <input
-                type="password"
-                placeholder="Enter firm passcode"
+                type="text"
+                placeholder="Enter Firm Passcode (e.g., Potter2026)"
                 value={firmPasscode}
                 onChange={(e) => {
                   setFirmPasscode(e.target.value);
@@ -263,7 +316,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
           </div>
 
           {/* File Picker Zone */}
-          <div className="pt-1">
+          <div className="pt-1 space-y-4">
             
             {/* Video File Picker */}
             <div className="flex flex-col">
@@ -303,6 +356,46 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
                 )}
               </div>
               {videoError && <p className="text-[10px] text-amber-700 mt-1">{videoError}</p>}
+            </div>
+
+            {/* Meal Receipt / Proof Picker (Optional) */}
+            <div className="flex flex-col">
+              <label className="block text-xs font-semibold text-brand-law-navy uppercase tracking-wider mb-1.5">
+                Meal Receipt / Proof (Optional)
+              </label>
+              <div 
+                onClick={() => receiptInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                  receiptFile ? 'border-brand-gold bg-brand-gold/5' : 'border-slate-300 hover:border-brand-gold bg-slate-50'
+                }`}
+              >
+                <input 
+                  type="file" 
+                  ref={receiptInputRef}
+                  accept=".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf"
+                  onChange={handleReceiptChange}
+                  className="hidden"
+                />
+                
+                {receiptFile ? (
+                  <div className="text-center">
+                    <Receipt className="w-10 h-10 text-brand-gold mx-auto mb-2" />
+                    <p className="text-xs font-medium text-slate-800 truncate max-w-[320px]">
+                      {receiptFile.name}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      {(receiptFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <Upload className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                    <p className="text-xs font-medium text-slate-700">Click to Upload Receipt / Proof</p>
+                    <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, JPEG, PDF up to 10MB</p>
+                  </div>
+                )}
+              </div>
+              {receiptError && <p className="text-[10px] text-amber-700 mt-1">{receiptError}</p>}
             </div>
 
           </div>

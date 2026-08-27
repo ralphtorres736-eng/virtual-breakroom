@@ -531,9 +531,21 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                   </blockquote>
 
                   {/* Timestamp & Meta */}
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                    <Calendar className="w-3.5 h-3.5 text-slate-300" />
-                    <span>{formatDate(sub.created_at)}</span>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-300" />
+                      <span>{formatDate(sub.created_at)}</span>
+                    </div>
+                    {sub.receipt_url && sub.receipt_url !== 'archived' && (
+                      <a
+                        href={sub.receipt_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-brand-gold/10 hover:bg-brand-gold/20 border border-brand-gold/30 text-[10px] font-semibold text-brand-gold hover:text-brand-law-navy transition-all shadow-sm"
+                      >
+                        <span>🧾 View Receipt</span>
+                      </a>
+                    )}
                   </div>
                 </div>
 
@@ -605,15 +617,15 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                             {!isAuthenticated && (
                               <div className="flex items-center gap-2">
                                 <input
-                                  type="password"
+                                  type="text"
                                   required
-                                  placeholder="Firm Passcode"
+                                  placeholder="Enter Firm Passcode (e.g., Potter2026)"
                                   value={commentPasscodes[sub.id] || ''}
                                   onChange={(e) => {
                                     setCommentPasscodes((prev) => ({ ...prev, [sub.id]: e.target.value }));
                                     setCommentErrors((prev) => ({ ...prev, [sub.id]: '' }));
                                   }}
-                                  className="px-2.5 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-gold/50 w-36"
+                                  className="px-2.5 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-gold/50 w-64"
                                 />
                                 {commentErrors[sub.id] && (
                                   <span className="text-red-500 text-[10px] font-medium">{commentErrors[sub.id]}</span>

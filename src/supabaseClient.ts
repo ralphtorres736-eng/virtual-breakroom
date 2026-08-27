@@ -244,6 +244,10 @@ export const api = {
         mockFileObjectUrls[`${newSub.id}_video`] = mockFileObjectUrls[`${lookupId}_video`];
         delete mockFileObjectUrls[`${lookupId}_video`];
       }
+      if (mockFileObjectUrls[`${lookupId}_receipt`]) {
+        mockFileObjectUrls[`${newSub.id}_receipt`] = mockFileObjectUrls[`${lookupId}_receipt`];
+        delete mockFileObjectUrls[`${lookupId}_receipt`];
+      }
 
       subs.push(newSub);
       try {
