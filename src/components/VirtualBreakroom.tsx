@@ -507,12 +507,12 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                   {/* Native HTML5 Video Element */}
                   {sub.video_url ? (
-                    <div className="relative group rounded-lg overflow-hidden border border-slate-200 bg-slate-950 aspect-video flex items-center justify-center">
+                    <div className="relative group rounded-lg overflow-hidden border border-slate-200 bg-black aspect-video flex items-center justify-center">
                       <video
                         src={sub.video_url ? `${sub.video_url}#t=0.1` : undefined}
                         controls
                         preload="metadata"
-                        className="w-full h-full object-cover max-h-[220px]"
+                        className="w-full h-full object-contain bg-black"
                       >
                         Your browser does not support native video playback.
                       </video>
@@ -619,7 +619,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
                                 <input
                                   type="text"
                                   required
-                                  placeholder="Enter Firm Passcode (e.g., Potter2026)"
+                                  placeholder="Enter Firm Passcode (e.g., AccessCode123)"
                                   value={commentPasscodes[sub.id] || ''}
                                   onChange={(e) => {
                                     setCommentPasscodes((prev) => ({ ...prev, [sub.id]: e.target.value }));

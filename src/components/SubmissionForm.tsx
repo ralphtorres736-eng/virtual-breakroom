@@ -254,7 +254,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ isOpen, onClose,
               </label>
               <input
                 type="text"
-                placeholder="Enter Firm Passcode (e.g., Potter2026)"
+                placeholder="Enter Firm Passcode (e.g., AccessCode123)"
                 value={firmPasscode}
                 onChange={(e) => {
                   setFirmPasscode(e.target.value);
