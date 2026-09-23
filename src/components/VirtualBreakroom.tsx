@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api, supabase, isSupabaseConfigured } from '../supabaseClient';
 import type { Submission, Comment } from '../supabaseClient';
 import { Search, MessageSquare, Play, Calendar, User, Send, ChevronDown, ChevronUp, Image as ImageIcon, Archive, Lock, Info } from 'lucide-react';
@@ -20,6 +20,78 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [selectedVaultMonth, setSelectedVaultMonth] = useState<string>('');
   const [isAdminArchiving, setIsAdminArchiving] = useState(false);
+
+  // Persistent Background Audio Player
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const wasPlayingRef = useRef(false);
+
+  // Initialize comfortable volume and ensure cleanup on unmount
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.volume = 0.4;
+    }
+    return () => {
+      if (audio) {
+        audio.pause();
+      }
+    };
+  }, []);
+
+  // Gracefully handle browser tab switching
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (document.hidden) {
+        // Tab is hidden / switched away
+        if (!audio.paused) {
+          wasPlayingRef.current = true;
+          audio.pause();
+          setIsPlaying(false);
+        } else {
+          wasPlayingRef.current = false;
+        }
+      } else {
+        // Tab is active / visible again
+        if (wasPlayingRef.current) {
+          audio.play().then(() => {
+            setIsPlaying(true);
+          }).catch((err) => {
+            console.warn('Audio auto-resume on tab focus was prevented:', err);
+          });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  const toggleAudio = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play().then(() => {
+        setIsPlaying(true);
+      }).catch((err) => {
+        console.warn('Audio playback error:', err);
+        setIsPlaying(false);
+      });
+    }
+  };
 
   // Track open comment sections
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
@@ -296,6 +368,17 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
 
   return (
     <div className="space-y-6">
+      {/* Persistent HTML5 Audio Element */}
+      <audio
+        ref={audioRef}
+        src="/breakroom-theme.mp3"
+        loop={true}
+        preload="auto"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+      />
+
       {/* Search and Filters Bar */}
       <div className="bg-white rounded-xl border border-brand-gold/15 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Search */}
@@ -338,6 +421,39 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
           </div>
 
           <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
+
+          {/* Theme Audio Toggle Pill in Header Bar */}
+          <button
+            type="button"
+            onClick={toggleAudio}
+            className={`px-3 py-1.5 rounded-full border flex items-center gap-1.5 transition-all cursor-pointer font-medium text-xs shadow-sm ${
+              isPlaying
+                ? 'bg-brand-law-navy text-brand-gold-bright border-brand-gold/40 hover:bg-brand-primary'
+                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-brand-gold/30 hover:text-brand-law-navy'
+            }`}
+            title={isPlaying ? 'Click to Mute Theme Song' : 'Click to Play Theme Song'}
+            aria-label={isPlaying ? 'Mute Theme Song' : 'Play Theme Song'}
+          >
+            {isPlaying ? (
+              <>
+                <span className="flex items-center gap-1">
+                  <span>🔊</span>
+                  <span>Mute Theme</span>
+                </span>
+                <span className="flex items-end gap-0.5 h-3 ml-0.5" aria-hidden="true">
+                  <span className="w-0.5 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+                  <span className="w-0.5 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+                  <span className="w-0.5 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+                  <span className="w-0.5 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+                </span>
+              </>
+            ) : (
+              <span className="flex items-center gap-1">
+                <span>🎵</span>
+                <span>Play Theme Song</span>
+              </span>
+            )}
+          </button>
 
           {/* Archive Vault Controls */}
           <div className="flex items-center gap-2">
@@ -658,6 +774,45 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
         </div>
       )}
 
+      {/* Floating Theme Song Control Pill in Bottom Corner */}
+      <aside
+        aria-label="Theme Song Audio Player"
+        className="fixed bottom-6 right-6 z-40"
+      >
+        <button
+          type="button"
+          onClick={toggleAudio}
+          className={`flex items-center gap-2.5 px-4 py-2.5 rounded-full shadow-lg border backdrop-blur-md transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 ${
+            isPlaying
+              ? 'bg-brand-law-navy/95 border-brand-gold/60 text-brand-gold-bright gold-shadow'
+              : 'bg-white/95 border-brand-gold/30 text-slate-700 hover:text-brand-law-navy hover:border-brand-gold/60 shadow-md'
+          }`}
+          title={isPlaying ? 'Click to Mute Theme Song' : 'Click to Play Theme Song'}
+          aria-label={isPlaying ? 'Mute Theme Song' : 'Play Theme Song'}
+        >
+          {isPlaying ? (
+            <>
+              <span className="flex items-center gap-1.5 font-semibold text-xs md:text-sm">
+                <span>🔊</span>
+                <span>Mute Theme</span>
+              </span>
+              <div className="flex items-end gap-0.5 h-3.5 px-0.5" aria-hidden="true">
+                <span className="w-1 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+                <span className="w-1 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+                <span className="w-1 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+                <span className="w-1 bg-brand-gold-bright audio-wave-bar rounded-full inline-block"></span>
+              </div>
+            </>
+          ) : (
+            <span className="flex items-center gap-1.5 font-semibold text-xs md:text-sm">
+              <span>🎵</span>
+              <span>Play Theme Song</span>
+            </span>
+          )}
+        </button>
+      </aside>
+
     </div>
   );
 };
+
