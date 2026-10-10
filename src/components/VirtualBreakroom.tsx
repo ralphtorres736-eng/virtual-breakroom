@@ -10,9 +10,18 @@ interface VirtualBreakroomProps {
   submissions: (Submission & { comments: Comment[] })[];
   onRefresh: () => void;
   isLoading: boolean;
+  audioState?: {
+    isPlaying: boolean;
+    toggleAudio: (e?: React.MouseEvent) => void;
+  };
 }
 
-export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions, onRefresh, isLoading }) => {
+export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({
+  submissions,
+  onRefresh,
+  isLoading,
+  audioState,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'video'>('all');
   
@@ -28,6 +37,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
 
   // Initialize comfortable volume and ensure cleanup on unmount
   useEffect(() => {
+    if (audioState) return;
     const audio = audioRef.current;
     if (audio) {
       audio.volume = 0.4;
@@ -37,10 +47,11 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
         audio.pause();
       }
     };
-  }, []);
+  }, [audioState]);
 
   // Gracefully handle browser tab switching
   useEffect(() => {
+    if (audioState) return;
     const handleVisibilityChange = () => {
       const audio = audioRef.current;
       if (!audio) return;
@@ -70,7 +81,7 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [audioState]);
 
   const toggleAudio = (e?: React.MouseEvent) => {
     if (e) {
@@ -369,15 +380,17 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
   return (
     <div className="space-y-6">
       {/* Persistent HTML5 Audio Element */}
-      <audio
-        ref={audioRef}
-        src="/breakroom-theme.mp3"
-        loop={true}
-        preload="auto"
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => setIsPlaying(false)}
-      />
+      {!audioState && (
+        <audio
+          ref={audioRef}
+          src="/breakroom-theme.mp3"
+          loop={true}
+          preload="auto"
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+        />
+      )}
 
       {/* Search and Filters Bar */}
       <div className="bg-white rounded-xl border border-brand-gold/15 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -425,16 +438,16 @@ export const VirtualBreakroom: React.FC<VirtualBreakroomProps> = ({ submissions,
           {/* Theme Audio Toggle Pill in Header Bar */}
           <button
             type="button"
-            onClick={toggleAudio}
+            onClick={audioState ? audioState.toggleAudio : toggleAudio}
             className={`px-3 py-1.5 rounded-full border flex items-center gap-1.5 transition-all cursor-pointer font-medium text-xs shadow-sm ${
-              isPlaying
+              (audioState ? audioState.isPlaying : isPlaying)
                 ? 'bg-brand-law-navy text-brand-gold-bright border-brand-gold/40 hover:bg-brand-primary'
                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-brand-gold/30 hover:text-brand-law-navy'
             }`}
-            title={isPlaying ? 'Click to Mute Theme Song' : 'Click to Play Theme Song'}
-            aria-label={isPlaying ? 'Mute Theme Song' : 'Play Theme Song'}
+            title={(audioState ? audioState.isPlaying : isPlaying) ? 'Click to Mute Theme Song' : 'Click to Play Theme Song'}
+            aria-label={(audioState ? audioState.isPlaying : isPlaying) ? 'Mute Theme Song' : 'Play Theme Song'}
           >
-            {isPlaying ? (
+            {(audioState ? audioState.isPlaying : isPlaying) ? (
               <>
                 <span className="flex items-center gap-1">
                   <span>🔊</span>
