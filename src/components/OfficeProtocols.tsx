@@ -5,8 +5,6 @@ import {
   Calendar,
   BookOpen,
   Search,
-  Copy,
-  Check,
   ExternalLink,
   AlertTriangle,
   CheckCircle2,
@@ -94,7 +92,7 @@ export const OfficeProtocols: React.FC<OfficeProtocolsProps> = ({
   const [acronymQuery, setAcronymQuery] = useState('');
 
   // Copy button feedback state
-  const [isCopied, setIsCopied] = useState(false);
+  const [copiedTemplate, setCopiedTemplate] = useState(false);
 
   // Sync with prop changes
   React.useEffect(() => {
@@ -117,13 +115,13 @@ export const OfficeProtocols: React.FC<OfficeProtocolsProps> = ({
     }
   };
 
-  const handleCopyFormat = async () => {
+  const handleCopyCalendarTemplate = async () => {
     try {
       await navigator.clipboard.writeText(CALENDAR_TEMPLATE);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2500);
+      setCopiedTemplate(true);
+      setTimeout(() => setCopiedTemplate(false), 2500);
     } catch (err) {
-      console.error('Failed to copy calendar format:', err);
+      console.error('Failed to copy calendar template:', err);
     }
   };
 
@@ -628,91 +626,219 @@ export const OfficeProtocols: React.FC<OfficeProtocolsProps> = ({
         </div>
       </section>
 
-      {/* PROTOCOL 3: CALENDARING */}
-      <section
-        id="calendaring"
-        className="bg-white rounded-2xl border border-brand-gold/20 shadow-sm p-6 sm:p-8 space-y-6 scroll-mt-24"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center font-serif font-bold text-sm">
-              03
-            </div>
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-gold block">
-                Protocol 03 · Revised 2/5/2026
-              </span>
-              <h2 className="font-serif text-2xl font-bold text-brand-law-navy">
-                Master Clio Calendaring Rules
-              </h2>
-            </div>
-          </div>
-          <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
-            Strict Hold Integrity
-          </span>
+      {/* ═══════════════════════════════════════
+           PROTOCOL 3: CALENDARING (FULL RESTORED)
+      ═══════════════════════════════════════ */}
+      <section id="calendaring" className="bg-white border border-slate-200 rounded-xl p-8 mb-8 shadow-sm">
+        <div className="font-mono text-[10px] tracking-[3px] text-[#D9A74A] uppercase mb-1.5">
+          Protocol 03 · Revised 2/5/2026
         </div>
+        <h2 className="text-[#1F4260] text-xl font-bold pb-3 border-b-2 border-slate-200 mb-2">
+          Master Clio Calendaring Rules
+        </h2>
+        <p className="text-slate-500 text-sm mb-5">
+          All hearing, mediation, and court events must follow exact formatting. Deviations create scheduling liability for the firm.
+        </p>
 
-        {/* Critical Red Alert Block */}
-        <div className="bg-rose-50 border-l-4 border-rose-600 rounded-r-xl p-4 sm:p-5 text-rose-950 space-y-1 shadow-sm">
-          <div className="flex items-start gap-2.5">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div>
-              <strong className="font-bold tracking-tight text-rose-900 block text-sm sm:text-base">
-                ABSOLUTE RULE: NOBODY REMOVES HOLDS OTHER THAN ATTORNEY POTTER!!!
-              </strong>
-              <p className="text-xs sm:text-sm text-rose-800 mt-1">
-                When all hold conditions are cleared, text Attorney Potter — she removes it.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Mandatory Event Title Format & Copy Button */}
-        <div className="space-y-3 pt-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-serif text-lg font-bold text-brand-law-navy flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-brand-gold" />
-              <span>Mandatory Event Title Format</span>
-            </h3>
-
-            {/* Copy Format clipboard button */}
-            <button
-              type="button"
-              onClick={handleCopyFormat}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
-                isCopied
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-brand-law-navy hover:bg-brand-primary text-brand-gold-bright border border-brand-gold/30 hover:border-brand-gold'
-              }`}
-              title="Copy template to clipboard"
-            >
-              {isCopied ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>✓ Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy Format</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="bg-slate-900 rounded-xl p-4 text-slate-100 font-mono text-xs sm:text-sm leading-relaxed border border-brand-gold/30 shadow-inner overflow-x-auto">
-            <code>{CALENDAR_TEMPLATE}</code>
-          </div>
-
-          <div className="bg-brand-cream rounded-xl p-4 border border-brand-gold/20 space-y-1.5 text-xs sm:text-sm">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-gold block">
-              Live Field Example
+        {/* CRITICAL HOLD RULE ALERT */}
+        <div className="bg-red-50 border-2 border-red-700 rounded-md p-4 my-5 flex gap-3 items-start">
+          <div className="text-xl flex-shrink-0 mt-0.5">🔴</div>
+          <div className="text-sm text-red-800 font-bold leading-relaxed">
+            ABSOLUTE RULE: NOBODY REMOVES HOLDS OTHER THAN ATTORNEY POTTER!!!
+            <span className="block font-normal text-xs mt-1 text-red-900">
+              Any unauthorized removal of a calendar hold is a serious protocol violation. When all hold conditions are cleared, text Attorney Potter — she removes it.
             </span>
-            <code className="text-slate-800 font-mono text-xs block bg-white p-2.5 rounded border border-slate-200">
-              HOLD for – Jane Doe (2024-12345) – OUR Temporary Orders Hearing on Divorce via Zoom – Court 2, Travis County – Zoom ID 123-456-7890 – CLIENT HAS TO HIRE – AB
-            </code>
           </div>
         </div>
+
+        {/* STEP BY STEP: CREATING CALENDAR EVENT */}
+        <h3 className="text-slate-800 font-semibold text-base mt-6 mb-3 flex items-center gap-2">
+          📌 Step-by-Step: Creating a Calendar Event in Clio
+        </h3>
+        <div className="space-y-4 mb-6">
+          <div className="flex gap-3.5 items-start pb-4 border-b border-slate-200">
+            <div className="w-7 h-7 rounded-full bg-[#2B5B84] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</div>
+            <div>
+              <div className="font-semibold text-sm text-slate-800">Navigate to Calendar</div>
+              <div className="text-xs text-slate-500 mt-1">Go to the left-hand sidebar in Clio and click <strong>Calendar</strong>.</div>
+            </div>
+          </div>
+          <div className="flex gap-3.5 items-start pb-4 border-b border-slate-200">
+            <div className="w-7 h-7 rounded-full bg-[#2B5B84] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</div>
+            <div>
+              <div className="font-semibold text-sm text-slate-800">Create New Event</div>
+              <div className="text-xs text-slate-500 mt-1">Click the <strong>+ New Event</strong> button in the upper-right corner.</div>
+            </div>
+          </div>
+          <div className="flex gap-3.5 items-start">
+            <div className="w-7 h-7 rounded-full bg-[#2B5B84] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</div>
+            <div>
+              <div className="font-semibold text-sm text-slate-800">Complete ALL Required Fields</div>
+              <ul className="text-xs text-slate-500 mt-1.5 space-y-1 list-disc pl-4">
+                <li><strong>Title</strong> – Use the mandatory naming format below.</li>
+                <li><strong>Start and End Time</strong> – Confirm correct date, time, and time zone.</li>
+                <li><strong>Location</strong> – Add the physical address or Zoom link.</li>
+                <li><strong>Description</strong> – Include a dated log of actions (see Description section below).</li>
+                <li><strong>Matter</strong> – Link the event to the appropriate Matter.</li>
+                <li><strong>Attendees</strong> – Invite based on the Attendee Guidelines below.</li>
+                <li><strong>Calendar</strong> – Choose the correct calendar (firm calendar).</li>
+                <li>Click <strong>Save Event</strong>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* ATTENDEE INVITATION GUIDELINES */}
+        <h3 className="text-slate-800 font-semibold text-base mt-6 mb-3 flex items-center gap-2">
+          👥 Attendee Invitation Guidelines
+        </h3>
+
+        <h4 className="text-sm font-semibold text-[#2B5B84] mt-4 mb-2">A. Based on Who Is Attending the Event</h4>
+        <table className="w-full border-collapse border border-slate-200 text-xs mb-3">
+          <thead>
+            <tr className="bg-slate-100 text-[#1F4260]">
+              <th className="border border-slate-200 p-2.5 text-left font-semibold">Attorney Attending</th>
+              <th className="border border-slate-200 p-2.5 text-left font-semibold">Required Invitation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-slate-200 p-2.5 font-semibold">Attorney Hutton</td>
+              <td className="border border-slate-200 p-2.5">Attorney Hutton</td>
+            </tr>
+            <tr className="bg-slate-50">
+              <td className="border border-slate-200 p-2.5 font-semibold">Attorney Booker</td>
+              <td className="border border-slate-200 p-2.5">Attorney Booker</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="bg-[#FDF6E8] border border-[#FDE68A] border-l-4 border-l-[#D9A74A] rounded p-3 mb-5 flex gap-2.5 items-start text-xs text-[#92400E]">
+          <span className="text-base flex-shrink-0">⭐</span>
+          <div><strong>Special Rule:</strong> If the event includes a HOLD for <strong>&quot;Client Has to Hire&quot;</strong> — invite <strong>Flor</strong> in addition to all required attendees above.</div>
+        </div>
+
+        <h4 className="text-sm font-semibold text-[#2B5B84] mt-4 mb-2">B. Hearing Assignment &amp; Client Reminder Schedule</h4>
+        <div className="bg-[#FDF6E8] border border-[#FDE68A] border-l-4 border-l-[#D97706] rounded p-3 mb-3 flex gap-2.5 items-start text-xs text-[#92400E]">
+          <span className="text-base flex-shrink-0">📌</span>
+          <div><strong>When adding any hearing to the calendar:</strong> You must invite <strong>Lovely L.</strong> — she will assign the hearing to either Pam, Maica, Jo-Anne, Gleen, or Halima. You must also check the calendar notes to confirm which legal assistant has been assigned to that particular hearing.</div>
+        </div>
+
+        <p className="text-xs font-semibold text-slate-800 mt-3 mb-1">Client Hearing Reminder Schedule</p>
+        <p className="text-xs text-slate-500 mb-2">For client hearing reminders, the assigned staff member is determined by day of the week:</p>
+        <table className="w-full border-collapse border border-slate-200 text-xs mb-5">
+          <thead>
+            <tr className="bg-slate-100 text-[#1F4260]">
+              <th className="border border-slate-200 p-2.5 text-left font-semibold w-32">Day</th>
+              <th className="border border-slate-200 p-2.5 text-left font-semibold">Assigned Staff — Client Hearing Reminders</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td className="border border-slate-200 p-2.5 font-semibold">Monday</td><td className="border border-slate-200 p-2.5">Lovely L.</td></tr>
+            <tr className="bg-slate-50"><td className="border border-slate-200 p-2.5 font-semibold">Tuesday</td><td className="border border-slate-200 p-2.5">Lovely L.</td></tr>
+            <tr><td className="border border-slate-200 p-2.5 font-semibold">Wednesday</td><td className="border border-slate-200 p-2.5">Pam</td></tr>
+            <tr className="bg-slate-50"><td className="border border-slate-200 p-2.5 font-semibold">Thursday</td><td className="border border-slate-200 p-2.5">Maica</td></tr>
+            <tr><td className="border border-slate-200 p-2.5 font-semibold">Friday</td><td className="border border-slate-200 p-2.5">Halima</td></tr>
+            <tr className="bg-[#FDF6E8] italic">
+              <td colSpan={2} className="border border-slate-200 p-2.5 text-slate-800">
+                <span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-[#D9A74A] text-slate-900 rounded uppercase mr-2 not-italic">SPECIAL RULE</span>
+                If HOLD reason is <strong>&quot;Client Has to Hire&quot;</strong> — ALWAYS add <strong>Flor</strong>, regardless of day.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* PRE-SAVE CHECKLIST */}
+        <h3 className="text-slate-800 font-semibold text-base mt-6 mb-2">✅ Pre-Save Checklist</h3>
+        <p className="text-xs text-slate-500 mb-3">Before saving or sending any event invitation, confirm all of the following:</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
+          <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2.5 text-xs font-medium flex items-center gap-2">✔ All required individuals included</div>
+          <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2.5 text-xs font-medium flex items-center gap-2">✔ Correct Matter is linked</div>
+          <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2.5 text-xs font-medium flex items-center gap-2">✔ Event Title follows required format</div>
+          <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2.5 text-xs font-medium flex items-center gap-2">✔ Correct day-of-week staff invited</div>
+          <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2.5 text-xs font-medium flex items-center gap-2">✔ Flor invited if &quot;Client Has to Hire&quot;</div>
+          <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2.5 text-xs font-medium flex items-center gap-2">✔ Description log started</div>
+        </div>
+
+        {/* MANDATORY EVENT TITLE FORMAT */}
+        <h3 className="text-slate-800 font-semibold text-base mt-6 mb-2 flex items-center gap-2">
+          📝 Mandatory Event Title Format
+        </h3>
+        <p className="text-xs text-slate-500 mb-2">Use this exact structure. All fields are mandatory. Click to copy:</p>
+        <div className="relative my-3">
+          <div className="bg-[#1E293B] text-[#7DD3FC] font-mono text-xs p-4 rounded-md pr-28 break-all leading-relaxed">
+            HOLD for – [Client First Name] [Client Last Name] (Cause No.) – [OUR/OC]&apos;s Hearing on [TYPE OF CASE] via [METHOD] – [Court #], [County] – [Address or Zoom ID] – [REASON FOR HOLD] – [Your Initials]
+          </div>
+          <button
+            onClick={handleCopyCalendarTemplate}
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#D9A74A] hover:bg-[#C49040] text-slate-900 font-bold text-xs px-3 py-1.5 rounded transition-all cursor-pointer"
+          >
+            {copiedTemplate ? '✓ Copied!' : 'Copy Format'}
+          </button>
+        </div>
+
+        <div className="bg-[#EBF4FF] border border-[#BFDBFE] border-l-4 border-l-[#2B5B84] rounded p-3 my-3 text-xs text-[#1F4260]">
+          <strong>Example:</strong> HOLD for – Jane Doe (2024-12345) – OUR Temporary Orders Hearing on Divorce via Zoom – Court 2, Travis County – Zoom ID 123-456-7890 – CLIENT HAS TO HIRE – AB
+        </div>
+
+        <div className="bg-[#FFFBEB] border border-[#FDE68A] border-l-4 border-l-[#D97706] rounded p-3 mb-6 flex gap-2.5 items-start text-xs text-[#92400E]">
+          <span className="text-base flex-shrink-0">⚠️</span>
+          <div>
+            <strong>All fields are mandatory.</strong> Use consistent capitalization (&quot;HOLD for –&quot;). Do not abbreviate cause numbers, omit counties, or skip initials. The person who schedules the event is also responsible for notifying the client using the <strong>Court Hearing Scheduled Email Template</strong>.
+          </div>
+        </div>
+
+        {/* ADDING DESCRIPTION RUNNING LOG */}
+        <h3 className="text-slate-800 font-semibold text-base mt-6 mb-2 flex items-center gap-2">
+          📋 Adding the Description — Running Log (Mandatory)
+        </h3>
+        <p className="text-xs text-slate-500 mb-2">
+          In the Description box, maintain a running dated log of all actions and communications. Format: <strong>[Date] – Description – Your Initials</strong>
+        </p>
+        <ul className="text-xs text-slate-600 space-y-1 list-disc pl-5 mb-3">
+          <li>Document who was invited at the time of creation.</li>
+          <li>Record all follow-ups, confirmations, and communications.</li>
+          <li>Include special notes regarding HOLD status, court instructions, or client instructions.</li>
+          <li>Use consistent capitalization and date formatting.</li>
+        </ul>
+        <p className="text-xs font-semibold text-slate-700 mb-2">Real Examples:</p>
+        <div className="space-y-2 mb-6">
+          <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-[#2B5B84] p-3 rounded font-mono text-xs text-slate-800">
+            10/22/25 – Calendared hearing per text from Attorney Potter. Added HOLD for CLIENT HAS TO HIRE. Invited Gleen; – MB
+          </div>
+          <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-[#2B5B84] p-3 rounded font-mono text-xs text-slate-800">
+            2/4 – Per LP, emailed OC back and confirmed Mediation with Gene Semko on 3/4 @ 1 PM VIA ZOOM. Calendared HOLD. We are AOR. Invited Jennifer and Maica as this is on a Wednesday, and invited FLOR since client has to hire – AO
+          </div>
+        </div>
+
+        {/* WHEN TO MARK EVENT AS A HOLD */}
+        <h3 className="text-slate-800 font-semibold text-base mt-6 mb-2 flex items-center gap-2">
+          🔒 When to Mark an Event as a HOLD
+        </h3>
+        <p className="text-xs text-slate-500 mb-3">Label an event as a HOLD when any of the following apply (including but not limited to):</p>
+        <ol className="space-y-2 text-xs text-slate-700 mb-4 list-decimal pl-5">
+          <li className="p-2 border-b border-slate-100">Client must hire.</li>
+          <li className="p-2 border-b border-slate-100">Opposing Party (OP) must be personally served.</li>
+          <li className="p-2 border-b border-slate-100">Notice of Hearing (NOH) / Notice of Court Proceeding (NOCP) must be sent to all parties.</li>
+          <li className="p-2 border-b border-slate-100">Confirmation with the court is required.</li>
+          <li className="p-2 border-b border-slate-100">Confirmation with Opposing Counsel (OC) is required.</li>
+          <li className="p-2">Mediation is required prior to the hearing.</li>
+        </ol>
+        <div className="bg-[#EBF4FF] border border-[#BFDBFE] border-l-4 border-l-[#2B5B84] rounded p-3 mb-6 text-xs text-[#1F4260]">
+          When ALL conditions are cleared → <strong>text Attorney Potter</strong> to remove the HOLD. You do not remove it yourself.
+        </div>
+
+        {/* RESPONSIBILITY & FOLLOW UP */}
+        <h3 className="text-slate-800 font-semibold text-base mt-6 mb-2 flex items-center gap-2">
+          📌 Responsibility &amp; Follow-Up
+        </h3>
+        <p className="text-xs text-slate-500 mb-2">The team member who created or scheduled the event is responsible for:</p>
+        <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-5">
+          <li>Maintaining and updating the event with required information.</li>
+          <li>Recording all relevant communications in the Description log.</li>
+          <li>Ensuring all required attendees have been invited.</li>
+          <li>Informing the client of the scheduled hearing or mediation by sending the <strong>Court Hearing Scheduled Email Template</strong>.</li>
+        </ul>
       </section>
 
       {/* PROTOCOL 4: ACRONYMS */}
